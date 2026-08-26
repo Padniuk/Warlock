@@ -1,3 +1,9 @@
+# Generated Doxygen output (grimoire/mainpage.md and Doxyfile are tracked; the built docs are not)
+grimoire/html/
+
+# OS/editor cruft
+.DS_Store
+
 # Prerequisites
 *.d
 

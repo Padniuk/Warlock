@@ -1,0 +1,6 @@
+/* Constrains the header logo (Doxyfile's PROJECT_LOGO) to a fixed display
+   size - Doxygen embeds that image at its native resolution otherwise. */
+#projectlogo img {
+    width: 100px;
+    height: 100px;
+}

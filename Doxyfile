@@ -1,0 +1,34 @@
+# Doxygen configuration for Warlock.
+# Run from the repo root: `doxygen Doxyfile`
+# Output lands in grimoire/html/index.html
+
+PROJECT_NAME           = "Warlock"
+PROJECT_BRIEF          = "A from-scratch C++ reimplementation of a corryvreckan-style particle-track reconstruction framework"
+PROJECT_LOGO           = grimoire/logo.png
+HTML_EXTRA_STYLESHEET  = grimoire/custom.css
+
+OUTPUT_DIRECTORY       = grimoire
+CREATE_SUBDIRS         = NO
+
+INPUT                  = src tools grimoire/mainpage.md
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = grimoire/mainpage.md
+FILE_PATTERNS          = *.cpp *.hpp
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+SORT_MEMBER_DOCS       = NO
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_NO_PARAMDOC       = NO
+
+JAVADOC_AUTOBRIEF      = YES
+TAB_SIZE               = 4
+
+HAVE_DOT               = NO
