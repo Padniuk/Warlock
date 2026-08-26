@@ -190,7 +190,6 @@ grimoire/     Doxygen config + generated reference documentation
 (re)build them locally:
 
 ```sh
-cd grimoire
 doxygen Doxyfile
 ```
 
