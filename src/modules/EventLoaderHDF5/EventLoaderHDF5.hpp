@@ -4,6 +4,7 @@
 #include "core/Module.hpp"
 #include <H5Cpp.h>
 #include <map>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -90,7 +91,11 @@ namespace framework {
         /// + 1 past the highest event_id seen in the file just finished.
         uint64_t next_file_event_offset_{0};
         
-        H5::H5File current_file_;
+        // unique_ptr, not a plain H5::H5File: H5File only has a copy
+        // constructor, no copy-assignment operator, so reassigning a plain
+        // member to switch files would use the compiler's deprecated
+        // implicit one; recreating the pointee sidesteps that entirely.
+        std::unique_ptr<H5::H5File> current_file_;
         std::unordered_map<uint32_t, std::string> sensor_map_;
         /// Raw CAEN channel -> DC-offset baseline (Volts), from the "/hits"
         /// group's "caen_dc_offset_volts_ch<N>" attributes (written by

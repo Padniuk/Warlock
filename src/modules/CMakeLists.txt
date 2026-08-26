@@ -2,7 +2,7 @@ file(GLOB_RECURSE MODULE_SOURCES "*.cpp")
 
 add_library(WarlockModules OBJECT ${MODULE_SOURCES})
 
-target_include_directories(WarlockModules PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_include_directories(WarlockModules PUBLIC ${PROJECT_SOURCE_DIR}/src ${HDF5_INCLUDE_DIRS})
 target_link_libraries(WarlockModules PUBLIC 
     WarlockObjects 
     Eigen3::Eigen 

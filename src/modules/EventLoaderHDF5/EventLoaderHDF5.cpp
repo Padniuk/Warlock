@@ -92,8 +92,8 @@ namespace framework {
         
         try {
             H5::Exception::dontPrint();
-            current_file_ = H5::H5File(fn, H5F_ACC_RDONLY);
-            H5::Group hits_grp = current_file_.openGroup("/hits");
+            current_file_ = std::make_unique<H5::H5File>(fn, H5F_ACC_RDONLY);
+            H5::Group hits_grp = current_file_->openGroup("/hits");
 
             sensor_map_.clear();
             channel_dc_offset_volts_.clear();
@@ -114,7 +114,7 @@ namespace framework {
                 }
             }
 
-            H5::DataSet ds_ev_id = current_file_.openDataSet("/hits/event_id");
+            H5::DataSet ds_ev_id = current_file_->openDataSet("/hits/event_id");
             hsize_t dims[1];
             ds_ev_id.getSpace().getSimpleExtentDims(dims);
             total_hits_ = dims[0];
@@ -122,7 +122,7 @@ namespace framework {
 
             auto safe_read = [&](const std::string& path, auto& vec, const H5::DataType& type) {
                 try {
-                    H5::DataSet ds = current_file_.openDataSet(path);
+                    H5::DataSet ds = current_file_->openDataSet(path);
                     vec.resize(total_hits_);
                     ds.read(vec.data(), type);
                 } catch (...) {
@@ -157,7 +157,7 @@ namespace framework {
             // never matches on such a file, same as if it had no channel
             // data at all.
             try {
-                H5::DataSet ds = current_file_.openDataSet("/hits/channel");
+                H5::DataSet ds = current_file_->openDataSet("/hits/channel");
                 h_channels_.resize(total_hits_);
                 ds.read(h_channels_.data(), H5::PredType::NATIVE_INT32);
             } catch (...) {
@@ -172,7 +172,7 @@ namespace framework {
 
             if (load_waveforms_) {
                 try {
-                    ds_samples_ = current_file_.openDataSet("/hits/samples");
+                    ds_samples_ = current_file_->openDataSet("/hits/samples");
 
                     // Newer converter output stores waveform data compactly
                     // (one row per hit that has one, not one per hit
@@ -180,7 +180,7 @@ namespace framework {
                     // Older files won't have it - fall back to the
                     // full-length, 1:1 index-aligned layout in that case.
                     try {
-                        H5::DataSet ds_haswf = current_file_.openDataSet("/hits/has_waveform");
+                        H5::DataSet ds_haswf = current_file_->openDataSet("/hits/has_waveform");
                         h_has_waveform_.resize(total_hits_);
                         ds_haswf.read(h_has_waveform_.data(), H5::PredType::NATIVE_UINT8);
                         compact_waveform_format_ = true;
@@ -190,8 +190,8 @@ namespace framework {
                         h_wf_t0_compact_.resize(n_wf);
                         h_wf_dt_compact_.resize(n_wf);
                         if (n_wf > 0) {
-                            current_file_.openDataSet("/hits/wf_t0").read(h_wf_t0_compact_.data(), H5::PredType::NATIVE_DOUBLE);
-                            current_file_.openDataSet("/hits/wf_dt").read(h_wf_dt_compact_.data(), H5::PredType::NATIVE_DOUBLE);
+                            current_file_->openDataSet("/hits/wf_t0").read(h_wf_t0_compact_.data(), H5::PredType::NATIVE_DOUBLE);
+                            current_file_->openDataSet("/hits/wf_dt").read(h_wf_dt_compact_.data(), H5::PredType::NATIVE_DOUBLE);
                         }
                     } catch (...) {
                         compact_waveform_format_ = false;

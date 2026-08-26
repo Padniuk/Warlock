@@ -14,7 +14,7 @@
 #include <vector>
 #include <cmath>
 #include <Eigen/Dense>
-#include <toml++/toml.hpp>
+#include <toml++/toml.h>
 #include "core/detector/layouts/Layout.hpp"
 #include "core/detector/layouts/GenericLayout.hpp"
 

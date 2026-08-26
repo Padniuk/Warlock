@@ -10,7 +10,7 @@
 #include <vector>
 #include <optional>
 #include <type_traits>
-#include <toml++/toml.hpp>
+#include <toml++/toml.h>
 #include "core/utils/Units.hpp"
 
 namespace framework {

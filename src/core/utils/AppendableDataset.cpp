@@ -4,7 +4,7 @@
 namespace framework {
     AppendableDataset::AppendableDataset(H5::Group& group, const std::string& name, H5::PredType type,
                                           int rank, hsize_t width, hsize_t chunk_rows)
-        : current_size_(0), datatype_(type), rank_(rank) {
+        : current_size_(0), datatype_(type) {
 
         H5::DataSpace dataspace;
         H5::DSetCreatPropList prop;

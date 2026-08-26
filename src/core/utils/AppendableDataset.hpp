@@ -66,7 +66,6 @@ namespace framework {
         H5::DataSet dataset_;
         size_t current_size_;
         H5::PredType datatype_;
-        int rank_;
     };
 }
 #endif

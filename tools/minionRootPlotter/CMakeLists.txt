@@ -6,6 +6,7 @@ add_executable(minionRootPlotter
 target_include_directories(minionRootPlotter PRIVATE
     ${CMAKE_SOURCE_DIR}/src/
     ${ROOT_INCLUDE_DIRS}
+    ${HDF5_INCLUDE_DIRS}
 )
 
 target_link_libraries(minionRootPlotter PRIVATE

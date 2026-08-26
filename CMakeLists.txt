@@ -53,6 +53,9 @@ FetchContent_MakeAvailable(tomlplusplus)
 FetchContent_Declare(Eigen3 GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git GIT_TAG 3.4.0)
 FetchContent_GetProperties(Eigen3)
 if(NOT eigen3_POPULATED)
+    if(POLICY CMP0169)
+        cmake_policy(SET CMP0169 OLD)
+    endif()
     FetchContent_Populate(Eigen3)
 endif()
 add_library(eigen_headers INTERFACE)
@@ -117,6 +120,7 @@ target_include_directories(WarlockObjects INTERFACE src/)
 # Main Framework Engine
 file(GLOB_RECURSE CORE_SOURCES "src/core/*.cpp")
 add_library(WarlockCore STATIC ${CORE_SOURCES})
+target_include_directories(WarlockCore PUBLIC ${HDF5_INCLUDE_DIRS})
 target_link_libraries(WarlockCore PUBLIC
     ${HDF5_CXX_LIBRARIES}
     Threads::Threads
