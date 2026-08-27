@@ -124,6 +124,7 @@ namespace framework {
             if (!single.empty()) filenames_.push_back(single);
         }
         batch_size_ = global_config.get<size_t>("batch_size", 5000);
+        max_event_id_ = config.get<uint64_t>("max_event_id", std::numeric_limits<uint64_t>::max());
     }
 
     void Reader::initialize() {
@@ -246,6 +247,7 @@ namespace framework {
                                                           tr.openDataSet("chi2"), tr.openDataSet("ndof")};
 
             for (size_t i = 0; i < event_id.size(); ++i) {
+                if (event_id[i] > max_event_id_) continue;
                 track_index_.push_back(
                     {event_id[i], track_id[i], static_cast<uint32_t>(file_idx), static_cast<uint32_t>(i)});
             }
@@ -296,6 +298,7 @@ namespace framework {
                 cluster_handles_[{det_idx, file_idx}] = std::move(handles);
 
                 for (size_t j = 0; j < event_id.size(); ++j) {
+                    if (event_id[j] > max_event_id_) continue;
                     uint64_t cid = cluster_id[j];
                     if (cid >= cluster_index_.size()) cluster_index_.resize(cid + 1);
                     cluster_index_[cid] = ClusterLoc{event_id[j], static_cast<uint32_t>(file_idx),
@@ -362,6 +365,7 @@ namespace framework {
 
                 auto& idx = waveforms_by_det_[det_name];
                 for (size_t j = 0; j < event_id.size(); ++j) {
+                    if (event_id[j] > max_event_id_) continue;
                     idx.push_back({event_id[j], static_cast<uint32_t>(file_idx), static_cast<uint32_t>(j)});
                 }
             }

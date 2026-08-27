@@ -9,6 +9,7 @@
 #include "core/Module.hpp"
 #include <H5Cpp.h>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -162,6 +163,18 @@ namespace framework {
 
         std::vector<std::string> filenames_; ///< Input HDF5 files, loaded (and concatenated) in initialize().
         size_t batch_size_; ///< Tracks emitted per run() call, capped by DataBatch::requested_batch_size. Also the row-fetch granularity for waveform/cluster replay windows.
+
+        /// Optional per-instance cutoff (config key "max_event_id", default
+        /// unlimited): rows with event_id beyond this are silently dropped
+        /// in loadFile(), never entering track_index_/cluster_index_/
+        /// waveforms_by_det_. Lets one run's replay stop cleanly at a known
+        /// desync point without discarding everything before it and
+        /// without re-running the (expensive) upstream tracking stage that
+        /// produced this file - deliberately local to this block, not the
+        /// global `number_of_events`, since each [[Reader]] instance is one
+        /// independent run with its own cutoff (see class docs above on
+        /// why runs are never combined into one instance).
+        uint64_t max_event_id_{std::numeric_limits<uint64_t>::max()};
 
         std::vector<std::unique_ptr<H5::H5File>> files_; ///< Kept open for the module's lifetime so heavy fields can be fetched on demand.
 
