@@ -9,7 +9,6 @@ Reads whichever of `/tracks`, `/track_cluster_links`, `/clusters/<name>`, `/wave
 
 ### Parameters
 * `filenames`: Input HDF5 file(s) to load. Accepts a single value or a list.
-* `max_event_id` *(optional)*: Rows with `event_id` beyond this are silently dropped at load time - stop replaying this run at a known-good point (e.g. right before a detected desync) without discarding everything before it and without re-running the upstream tracking stage that produced the file. Unlimited by default. Local to this `[[Reader]]` block, not `[Warlock]`'s global `number_of_events` - each instance is one independent run with its own cutoff.
 * `batch_size` *(global)*: Tracks emitted per `run()` call, capped by this - set under `[Warlock]`, not this module's own block.
 
 ### Usage
