@@ -163,6 +163,21 @@ namespace framework {
                         if (std::isnan(global_pred.x()) || std::isnan(global_pred.y())) continue;
                         Eigen::Vector3d local_pred = det.R_inv * (global_pred - det.position);
 
+                        // Which die the TRACK itself predicts to be on, not
+                        // any cluster's - restricts candidates below to
+                        // this die only, so a track near the gap between
+                        // two dies no longer gets tested against both
+                        // sides' boundary-row clusters (each with its own
+                        // independent chance to fall inside the ellipse
+                        // cut). getColumn()/getRow() take a fractional
+                        // position directly - dieOf() rounds to the
+                        // nearest pixel internally, no manual rounding
+                        // needed here. "" for a detector with no die split
+                        // at all (dieOf() returns "" everywhere on it, same
+                        // as every cluster's own die - see below), so this
+                        // is a no-op there.
+                        std::string track_die = det.dieOf(det.getColumn(local_pred.x()), det.getRow(local_pred.y()));
+
                         int assoc_this_det = 0;
                         std::map<std::string, int> assoc_by_die;
                         std::set<std::string> dies_with_cluster;
@@ -188,6 +203,17 @@ namespace framework {
 
                         for (const auto& cluster : det_clusters) {
                             std::string die = det.dieOf(cluster->column(), cluster->row());
+                            // Skip a cluster on a different die than the
+                            // track's own predicted one - see track_die's
+                            // docs above for why. Real dead-zone geometry
+                            // (the actual gap between dies) is unaffected:
+                            // a track truly in the gap still predicts
+                            // SOME die (whichever pixel index it rounds
+                            // nearest to), so it's still compared against
+                            // that one die's clusters, same as any other
+                            // track - it just no longer also gets a second,
+                            // independent chance via the other die.
+                            if (die != track_die) continue;
                             if (!die.empty()) dies_with_cluster.insert(die);
                             Eigen::Vector3d local_c = det.R_inv * (cluster->global() - det.position);
 

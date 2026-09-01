@@ -6,6 +6,8 @@
 ### Description
 Matches fitted tracks to clusters on one or more DUTs, mirroring corryvreckan's `DUTAssociation` module. For every track and every configured target detector, associates *every* cluster within an elliptical spatial cut and an absolute time cut - not just the closest one, matching corry's own behavior of tracking every candidate association rather than a single best match.
 
+For a multi-die detector, candidate clusters are restricted to the die the track itself predicts (its own local intercept, not any cluster's) - Warlock-only, 2026-09-01. Without this, a track near the physical gap between two dies would be tested against both dies' boundary-row clusters, each an independent chance to pass the ellipse cut - visible as efficiency/charge maps "bleeding" further into the gap than past the true outer edge, where only one die's clusters are ever nearby. No-op for a detector with no die split.
+
 Bound to either a single detector (`name`) or every detector of a given `type`, with one internal loop iteration per matching detector when `type` is used.
 
 For a two-die CAEN board (a TILGAD or TREF layout in the detector geometry), every plot below is filled both combined (both dies together) and split into `/TOP` and `/BOTTOM` subpaths, so per-die association quality can be inspected independently.

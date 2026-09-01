@@ -170,7 +170,11 @@ namespace framework {
         bool isMasked(int col, int row) const { return masked_pixels.count({col, row}) > 0; }
         /// @return Whether a local-plane position lies on the physical
         /// sensor, with an edge margin of `pixel_tolerance` pixels (corry's
-        /// `hasIntercept()`).
+        /// `hasIntercept()`). For a multi-die board, also false for a
+        /// position in the real gap between two dies (Warlock-only fix,
+        /// 2026-09-01) - the plain bounding-box check alone can't tell
+        /// that apart from active silicon, since the gap sits fully
+        /// inside the board's own overall pixel-index bounds.
         bool hasIntercept(double local_x, double local_y, double pixel_tolerance) const;
         /// @return Whether a local-plane position is on/near (within
         /// `tolerance` pixels, Chebyshev distance) a masked pixel (corry's

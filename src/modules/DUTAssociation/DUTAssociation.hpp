@@ -21,6 +21,17 @@ namespace framework {
      * `type`, one instance per config block. For a two-die CAEN board
      * (DetectorGeo::hasDieSplit()), every plot is filled both combined and
      * split into `/TOP` and `/BOTTOM` subpaths.
+     *
+     * Candidate clusters are restricted to the die the TRACK itself
+     * predicts (DetectorGeo::getColumn()/getRow() of its own local
+     * intercept, then dieOf()) - not every cluster on the detector
+     * regardless of die (Warlock-only fix, 2026-09-01). Without this, a
+     * track near the physical gap between two dies gets tested against
+     * both dies' boundary-row clusters, each an independent chance to
+     * fall inside the ellipse cut - visible as efficiency/charge maps
+     * "bleeding" further into the gap between two dies than past the true
+     * outer edge of the whole assembly, where only one die's clusters are
+     * ever nearby. No-op for a detector with no die split at all.
      */
     class DUTAssociation : public Module {
     public:

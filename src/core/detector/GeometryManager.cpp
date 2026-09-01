@@ -50,6 +50,37 @@ namespace framework {
         if (local_y < -y_half || local_y > y_half) {
             return false;
         }
+        // A multi-die board's own bounding box (just checked above) also
+        // covers the real inter-die gap - a position sitting in that gap
+        // passes both checks above even though there's no active silicon
+        // there at all. Reject it too, the same way a genuinely
+        // out-of-bounds position already is, rather than letting it
+        // through to whatever ellipse/spatial matching runs next - that
+        // stage would otherwise still find a match via one die's own
+        // generous cut reaching into the gap from its own side, which
+        // reads as an efficiency/charge map "bleeding" further into an
+        // inter-die gap than past the sensor's true outer edge, since
+        // that outer edge IS correctly rejected here and the gap wasn't.
+        //
+        // NOT done via dieOf(column, getRow(local_y)).empty() (tried
+        // first, doesn't work): dieOf()'s custom_dies lookup rounds the
+        // fractional row to the NEAREST integer row index
+        // (floor(row+0.5)) and always finds a die for it - the row-index
+        // space has no "neither" value, so that check can never be true
+        // for any position inside the whole board's bounding box. It
+        // splits the gap exactly at its midpoint between the two dies,
+        // whereas what's needed is the actual physical distance from the
+        // nearest row's own center: within pitch_y/2 of it (on that die's
+        // real silicon) or not (in the dead zone). effectivePitchY() is
+        // the gap-inflated row-to-row spacing (see its own docs), so
+        // multiplying the fractional row offset by it converts back to a
+        // real physical distance in mm.
+        if (!dieLabels().empty()) {
+            double row = getRow(local_y);
+            double nearest_row = std::round(row);
+            double offset_mm = (row - nearest_row) * effectivePitchY();
+            if (std::abs(offset_mm) > pitch_y / 2.0) return false;
+        }
         return true;
     }
 
