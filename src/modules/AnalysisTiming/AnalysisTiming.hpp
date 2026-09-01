@@ -16,13 +16,16 @@
 namespace framework {
     /**
      * @brief Mirrors corryvreckan's AnalysisTiming module: for every track
-     * carrying an associated cluster on ALL of #det_names_ (and any
-     * #required_detectors_), fills each detector's own charge-vs-ToA map
-     * plus a pairwise delta-ToA histogram for every detector pair, using
-     * the earliest pixel timestamp per cluster. Time-walk correction
-     * (#time_walk_method_) is a Warlock-only addition, off by default -
-     * corry's own module never applies one (its run() has a literal
-     * "MISSING --- Time walk correction" comment).
+     * carrying an associated cluster on any #required_detectors_, fills
+     * each detector's own charge-vs-ToA map plus a pairwise delta-ToA
+     * histogram for every detector pair in #det_names_, using the earliest
+     * pixel timestamp per cluster. Per-pair or all-of-#det_names_ track
+     * gating is controlled by #require_cluster_on_all_detectors_ (default: per-pair -
+     * see its own docs for when the stricter all-of mode is needed
+     * instead). Time-walk correction (#time_walk_method_) is a
+     * Warlock-only addition, off by default - corry's own module never
+     * applies one (its run() has a literal "MISSING --- Time walk
+     * correction" comment).
      */
     class AnalysisTiming : public Module {
     public:
@@ -33,8 +36,28 @@ namespace framework {
         void finalize() override;
 
     private:
-        std::vector<std::string> det_names_;         ///< Detectors correlated against each other; a track needs a cluster on every one to count.
+        std::vector<std::string> det_names_;         ///< Detectors correlated against each other; see #require_cluster_on_all_detectors_ for whether a track needs a cluster on every one, or just on each pair it contributes to.
         std::vector<std::string> required_detectors_; ///< Additional detectors (e.g. a reference plane) a track must also have a cluster on, but that aren't themselves correlated.
+
+        /// If false (default), each (d1, d2) pair independently requires
+        /// only that BOTH of ITS OWN two detectors have a cluster on a
+        /// track - a track missing some other, unrelated detector in
+        /// #det_names_ can still contribute to the pairs it does have.
+        /// Right for the common case of #det_names_ spanning more
+        /// detectors than physically ever coincide together.
+        ///
+        /// If true, a track must carry a cluster on EVERY detector in
+        /// #det_names_ before contributing to ANY pair - the classic
+        /// 3-detector ("triplet") timing-resolution method needs this: to
+        /// solve sigma_i^2 + sigma_j^2 = sigma_ij^2 for each detector's own
+        /// resolution from one closed triplet, its three pairwise dtoa
+        /// distributions must come from the SAME track population, not
+        /// three independently-selected ones - see the analysis notebook's
+        /// solve_triplet_timing() for the equations this feeds.
+        /// Meant to be combined with a small #det_names_ (e.g. exactly 3,
+        /// one [[AnalysisTiming]] instance per triplet, each with its own
+        /// `name` so their dtoa_* histograms don't collide in the output).
+        bool require_cluster_on_all_detectors_{false};
 
         /// Time-walk correction: t_corr = t_raw - (a/charge + b) or
         /// t_raw - (a/sqrt(charge) + b), matching corry's parametrization.
@@ -105,7 +128,7 @@ namespace framework {
         std::mutex deferred_mtx_; ///< Guards #time_walk_fit_accum_/#pair_records_ - locked once per run() thread-chunk (merging that chunk's local accumulation), never per-pair.
 
         std::atomic<size_t> total_tracks_{0};         ///< Every track seen in run(), across all batches.
-        std::atomic<size_t> valid_timing_tracks_{0};  ///< Subset of #total_tracks_ with a cluster on every configured detector.
+        std::atomic<size_t> valid_timing_tracks_{0};  ///< Subset of #total_tracks_ with a cluster on at least one configured detector (each detector pair is gated independently in run() - see its step 3).
 
         /// If set (default true), a cluster pair is only compared (all
         /// charge_toa/dtoa/timewalk/npairs fills) when both clusters'

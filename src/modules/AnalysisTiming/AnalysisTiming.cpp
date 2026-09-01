@@ -25,6 +25,7 @@ namespace framework {
         // Methods: "none", "inverse_charge", "inverse_sqrt_charge"
         time_walk_method_ = config.get<std::string>("time_walk_method", "none");
         require_same_trigger_group_ = config.get<bool>("require_same_trigger_group", true);
+        require_cluster_on_all_detectors_ = config.get<bool>("require_cluster_on_all_detectors", false);
         for (const auto& det : det_names_) {
             time_walk_a_[det] = config.get<double>("time_walk_a_" + det, 0.0);
             time_walk_b_[det] = config.get<double>("time_walk_b_" + det, 0.0);
@@ -204,16 +205,27 @@ namespace framework {
                         by_det[c->detectorID()].push_back(c);
                     }
 
-                    // 3. corry requires EVERY configured detector to have at
-                    // least one associated cluster before a track
-                    // contributes anything at all ("Check that the track has
-                    // a hit in all DUTs" in its run()) - matched here
-                    // exactly, not relaxed to a per-pair requirement.
-                    bool valid_track = true;
-                    for (auto const& name : det_names_) {
-                        if (by_det.find(name) == by_det.end()) { valid_track = false; break; }
+                    // 3. Two modes, controlled by require_cluster_on_all_detectors_
+                    // (see its own docs in the header for the full
+                    // rationale - short version: per-pair is right when
+                    // det_names_ spans more detectors than ever physically
+                    // coincide together; all-of is right for a triplet
+                    // instance, where all 3 pairwise dtoa distributions
+                    // must come from the same track population for the
+                    // sigma_i^2 + sigma_j^2 = sigma_ij^2 algebra to be
+                    // self-consistent). required_detectors_ (checked above,
+                    // step 1) applies either way - that's a separate,
+                    // deliberate spatial/track-quality gate, not this
+                    // detector-coincidence requirement.
+                    if (require_cluster_on_all_detectors_) {
+                        bool has_all = true;
+                        for (auto const& name : det_names_) {
+                            if (by_det.find(name) == by_det.end()) { has_all = false; break; }
+                        }
+                        if (!has_all) continue;
+                    } else {
+                        if (by_det.empty()) continue;
                     }
-                    if (!valid_track) continue;
 
                     loc_valid++;
 
@@ -245,8 +257,10 @@ namespace framework {
                     // detector case.
                     for (size_t d1_idx = 0; d1_idx < det_names_.size(); ++d1_idx) {
                         const std::string& name1 = det_names_[d1_idx];
+                        auto it1 = by_det.find(name1);
+                        if (it1 == by_det.end()) continue; // this track has no cluster on name1 - nothing to pair from here
                         auto& det1 = geo.getDetector(name1);
-                        auto const& clusters1 = by_det.at(name1);
+                        auto const& clusters1 = it1->second;
                         int n_pairs = 0;
                         // Per-die (TOP/BOTTOM) breakdown of ncat_/npairs_ -
                         // "" would double-count the combined total already
@@ -268,8 +282,10 @@ namespace framework {
                             int n_pairs_c1 = 0;
                             for (size_t d2_idx = d1_idx + 1; d2_idx < det_names_.size(); ++d2_idx) {
                                 const std::string& name2 = det_names_[d2_idx];
+                                auto it2 = by_det.find(name2);
+                                if (it2 == by_det.end()) continue; // this track has no cluster on name2 - no pair to form with name1
                                 auto& det2 = geo.getDetector(name2);
-                                for (auto const& c2 : by_det.at(name2)) {
+                                for (auto const& c2 : it2->second) {
                                     // Skip cluster pairs sampled by different
                                     // CAEN trigger groups - not physically
                                     // comparable timing (see
@@ -400,8 +416,9 @@ namespace framework {
 
     void AnalysisTiming::finalize() {
         WR_LOG(STATUS, "Timing Analysis Finished.");
-        WR_LOG(INFO, "Tracks with a cluster on every configured detector: " + std::to_string(valid_timing_tracks_) +
-                     " / " + std::to_string(total_tracks_));
+        WR_LOG(INFO, "Tracks with a cluster on at least one configured detector: " + std::to_string(valid_timing_tracks_) +
+                     " / " + std::to_string(total_tracks_) + " (each detector pair is gated independently now - "
+                     "see run()'s step 3 - so this is no longer 'on every detector')");
 
         if (time_walk_method_ != "none") {
             WR_LOG(INFO, "Time-walk correction applied: method=" + time_walk_method_);
