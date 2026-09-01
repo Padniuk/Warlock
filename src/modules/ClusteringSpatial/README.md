@@ -6,6 +6,8 @@
 ### Description
 Groups adjacent pixel hits into clusters, per detector and per event, mirroring corryvreckan's `ClusteringSpatial`. Flood-fills 8-connected neighboring pixels within each event into `Cluster` objects, computing a charge-weighted or plain geometric centroid (per `charge_weighting`) and the cluster's local/global position from the result.
 
+For a detector split into multiple dies (`GeometryManager`'s `dieOf()`, e.g. a two-die CAEN_UZH board), the flood-fill never crosses from one die's pixels into another's, even where their `(column, row)` indices are numerically adjacent - two dies are separate physical silicon chips with a real gap between them (the geometry file's `pitch_y_gap`), so a cluster spanning both would be a grid-index artifact, not a real hit. No-op for a detector with no die split at all.
+
 Since a CAEN waveform-digitizer channel is fed into this same clustering path as an ordinary `Pixel` (see `WaveformSelector`), adjacent-channel CAEN hits get merged into real multi-channel clusters here too, not just MIMOSA26/RD53B pixel hits.
 
 ### Parameters

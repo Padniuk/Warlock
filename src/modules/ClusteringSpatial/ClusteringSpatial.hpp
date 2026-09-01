@@ -23,6 +23,13 @@ namespace framework {
      * Parallelized per detector, further chunked by event range within
      * each detector so the configured thread count is actually used
      * regardless of how many detectors are present.
+     *
+     * Never flood-fills across a die boundary (DetectorGeo::dieOf()) - two
+     * dies on the same board are separate physical silicon chips with a
+     * real gap between them, so (column, row)+-1 adjacency alone would
+     * otherwise merge a hit on each die's boundary row into one
+     * physically-impossible cluster spanning the gap. No-op for a
+     * detector with no die split (dieOf() returns "" everywhere on it).
      */
     class ClusteringSpatial : public Module {
     public:

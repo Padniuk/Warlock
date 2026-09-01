@@ -203,12 +203,33 @@ namespace framework {
                             while(head < queue.size()){
                                 auto curr = queue[head++];
                                 cluster->addPixel(curr);
-                                
+
+                                // Never flood-fill across a die boundary:
+                                // (col,row)+-1 adjacency alone doesn't know
+                                // that two dies on the same board are
+                                // separate physical silicon chips with a
+                                // real gap between them (see the geometry
+                                // file's pitch_y_gap) - without this check,
+                                // a hit on each die's boundary row in the
+                                // same event gets merged into one cluster
+                                // spanning the gap, which isn't physically
+                                // possible (charge can't spread across it).
+                                // dieOf() returns "" for every pixel on a
+                                // detector with no die split at all, so
+                                // this is a no-op there (curr_die ==
+                                // neighbor's die == "" always) - only
+                                // changes anything for a detector where two
+                                // different non-empty die labels actually
+                                // occur (see b7_dies.toml's [[<det>.dies]]
+                                // entries).
+                                std::string curr_die = det.dieOf(curr->column(), curr->row());
+
                                 for(int dx = -1; dx <= 1; ++dx){
                                     for(int dy = -1; dy <= 1; ++dy){
                                         if(dx == 0 && dy == 0) continue;
                                         auto it = hitmap.find({curr->column() + dx, curr->row() + dy});
                                         if(it != hitmap.end() && !used_pixels.count(it->second)){
+                                            if (det.dieOf(it->second->column(), it->second->row()) != curr_die) continue;
                                             used_pixels.insert(it->second);
                                             queue.push_back(it->second);
                                         }
